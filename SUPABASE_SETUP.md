@@ -1,44 +1,44 @@
-# Supabase configuration for LIVYA CureHub
+# LIVYA CureHub deployment and Supabase setup
 
-## Verified project
-
-- Project name: `livyasmartapp`
-- Project reference: `wbwbvyhvxynfcvisgiun`
-- Project URL: https://wbwbvyhvxynfcvisgiun.supabase.co
-- Region: `ap-south-1`
-- Database host: `db.wbwbvyhvxynfcvisgiun.supabase.co`
-- Current public schema: empty, ready for the application's Prisma migration.
-- Supabase Auth's managed `auth` schema is untouched.
+## Designated Supabase project
+- Project reference: `ekyvogemusxmgeefrqmc` (Livya Smart App).
+- Use this project only for the fresh LIVYA Smart App. Do not modify the old Livya HIMS project or substitute another Supabase project.
+- Current connected Supabase access returns a permission error for the designated project. Database work is blocked until the account/organization access is corrected.
+- Do not assume the application tables are installed. The repository currently has a Prisma schema but no initial SQL migration file.
 
 ## Architecture
+The app is React/Vite -> Express REST API -> Prisma -> PostgreSQL. Authentication is implemented in the Express API using a JWT in an HTTP-only cookie and a database-backed session. Do not add a second browser-side Supabase Auth flow without deliberately redesigning authentication.
 
-The application package uses React/Vite -> Express REST API -> Prisma -> PostgreSQL. Authentication is the Express JWT/HTTP-only cookie session implemented in the package, not Supabase Auth. Do not mix it with a second browser-side authentication flow.
+The browser-safe Supabase publishable key is not a database password and must not be placed in `DATABASE_URL`. The frontend should call the Express API.
 
-The supplied `sb_publishable_...` value is a browser-safe Supabase publishable API key, but the present app does not call Supabase's browser Data API; it calls the Express API. Therefore this key is not a database password and does not belong in `DATABASE_URL`.
-
-## API host environment
-
-Set these as server-side environment variables in Render/Railway (never commit them):
+## API hosting environment
+Configure these values in the API hosting provider's secret/environment settings. Do not commit actual values:
 
 ```dotenv
 NODE_ENV=production
 PORT=4000
-DATABASE_URL=postgresql://postgres:[YOUR_DATABASE_PASSWORD]@db.wbwbvyhvxynfcvisgiun.supabase.co:5432/postgres?sslmode=require
-JWT_SECRET=[generate-a-random-secret-of-at-least-32-bytes]
-CLIENT_ORIGIN=https://YOUR_FRONTEND_DOMAIN
+DATABASE_URL=postgresql://postgres:[URL_ENCODED_PASSWORD]@[DESIGNATED_PROJECT_DB_HOST]:5432/postgres?sslmode=require
+JWT_SECRET=[random-secret-at-least-32-bytes]
+CLIENT_ORIGIN=https://app.livyacurehub.com
 COOKIE_NAME=livya_session
 ALLOW_PUBLIC_REGISTRATION=false
 ```
 
-Use the connection string supplied by Supabase Dashboard -> Connect if a pooler is recommended for the hosting runtime. URL-encode special characters in the password.
+Use the connection string from the designated Supabase project's Dashboard -> Connect. Prefer the provider-recommended pooler URL if required by the hosting runtime. URL-encode special characters in the password.
 
-## Migration order
+## Migration and bootstrap order
+1. Restore access to project `ekyvogemusxmgeefrqmc`.
+2. Run the repository CI checks and resolve failures.
+3. Generate an initial SQL migration from `server/prisma/schema.prisma` with Prisma CLI. Review the SQL and commit it under `server/prisma/migrations/`; do not invent or hand-edit an incomplete schema migration.
+4. Validate and test the migration against a disposable PostgreSQL database.
+5. Apply the reviewed migration to the designated project only.
+6. Bootstrap a Superadmin with a unique password of at least 16 characters using the seed script's required environment variables; remove bootstrap variables afterwards.
+7. Test role enforcement, patient isolation, session expiry, logout revocation, and CRUD operations with synthetic data.
 
-1. Review `server/prisma/schema.prisma` and the initial SQL migration in the source package.
-2. Run `npx prisma validate` and `npx prisma generate`.
-3. Verify migrations against a disposable PostgreSQL database first.
-4. Set the API's `DATABASE_URL`, then run `npx prisma migrate deploy`.
-5. Bootstrap a Superadmin using the package's seed command with a unique password, and remove bootstrap environment values afterwards.
-6. Test role enforcement, patient isolation, session expiry, and CRUD operations with synthetic data before clinical use.
+## Deployment
+- Client: Vercel project rooted at `client/`, production domain `app.livyacurehub.com`.
+- Admin: configure a separate deployment only after verifying that the current frontend actually has an admin route/entry point suitable for a separate hostname; target domain `admin.livyacurehub.com`.
+- API: deploy the Express service to a Node-compatible host and set `CLIENT_ORIGIN`, database URL, and JWT secret there.
+- Ensure HTTPS, cookie `Secure` in production, and correct CORS credentials configuration before testing cross-domain sessions.
 
-No service-role key, database password, or JWT secret belongs in the frontend or Git repository.
+Never commit database passwords, JWT secrets, service-role keys, or real patient/clinical data.

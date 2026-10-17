@@ -37,7 +37,7 @@ Use the connection string from the designated Supabase project's Dashboard -> Co
 
 ## Deployment
 - Frontend: create a Vercel project rooted at `client/`; set `VITE_API_URL=https://api.livyacurehub.com` and `VITE_ALLOW_PUBLIC_REGISTRATION=false`. The current frontend is role-aware, so both `app.livyacurehub.com` and `admin.livyacurehub.com` can be attached to the same Vercel project unless you intentionally split the apps later.
-- API: create a separate Vercel project rooted at `server/`. The repo includes `api/index.js` as a serverless Express entry point and `vercel.json` rewrites API paths to it. The install script generates Prisma Client.
+- API: create a separate Vercel project rooted at `server/`. Vercel's native Express detection recognizes the exported app in `src/app.js`; no custom rewrite is needed. The package install script generates Prisma Client.
 - Configure API environment variables in Vercel: `NODE_ENV=production`, `DATABASE_URL` (prefer Supabase's transaction/session pooler as appropriate for serverless connections), `JWT_SECRET` (random, at least 32 bytes), `CLIENT_ORIGINS=https://app.livyacurehub.com,https://admin.livyacurehub.com`, `COOKIE_NAME=livya_session`, and `ALLOW_PUBLIC_REGISTRATION=false`.
 - Add `api.livyacurehub.com` to the API Vercel project and both frontend domains to the frontend project. Ensure HTTPS and cookie `Secure` in production. Test login/logout from both domains and verify the browser sends credentials to the API.
 - Run database migrations and create the initial Superadmin before testing production login. Do not put `DATABASE_URL` or `JWT_SECRET` in the frontend environment.

@@ -87,6 +87,35 @@ export async function api(path, { method = 'GET', body } = {}) {
     throw new Error('Unsupported user-management action.');
   }
 
+  if (segments[0] === 'dashboard' && segments[1] === 'summary') {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const [patients, appointments, alerts, reviews, programs, orders, upcoming] = await Promise.all([
+      supabase.from('Patient').select('id', { count: 'exact', head: true }),
+      supabase.from('Appointment').select('id', { count: 'exact', head: true }).gte('startAt', today.toISOString()),
+      supabase.from('VitalAlert').select('id', { count: 'exact', head: true }).in('status', ['OPEN', 'ACKNOWLEDGED']),
+      supabase.from('AIReview').select('id', { count: 'exact', head: true }).in('status', ['DRAFT', 'PENDING', 'IN_PROGRESS']),
+      supabase.from('Program').select('id', { count: 'exact', head: true }).eq('status', 'ACTIVE'),
+      supabase.from('StoreOrder').select('id', { count: 'exact', head: true }).in('status', ['PENDING', 'CONFIRMED', 'FULFILLING']),
+      supabase.from('Appointment')
+        .select('id,title,startAt,status,patient:Patient(fullName),clinician:User!Appointment_clinicianId_fkey(fullName)')
+        .gte('startAt', today.toISOString()).order('startAt').limit(5),
+    ]);
+    const failed = [patients, appointments, alerts, reviews, programs, orders, upcoming].find(result => result.error);
+    if (failed) fail(failed.error);
+    return {
+      stats: {
+        patients: patients.count || 0,
+        appointments: appointments.count || 0,
+        openAlerts: alerts.count || 0,
+        pendingReviews: reviews.count || 0,
+        activePrograms: programs.count || 0,
+        openOrders: orders.count || 0,
+      },
+      recentAppointments: upcoming.data || [],
+    };
+  }
+
   if (segments[0] === 'lookups' && segments[1] === 'patients') {
     const { data, error } = await supabase
       .from('Patient')
@@ -132,7 +161,7 @@ export async function api(path, { method = 'GET', body } = {}) {
   }
 
   if (segments.length === 1 && method === 'POST') {
-    const insertBody = { ...(body || {}), id: body?.id || crypto.randomUUID(), updatedAt: new Date().toISOString() };
+    const insertBody = { ...(body || {}), id: body?.id || crypto.randomUUID() };\n    if (!['prescriptionItems', 'consumption', 'therapyAssignments', 'messages'].includes(key)) insertBody.updatedAt = new Date().toISOString();
     if (key === 'messages' && !insertBody.senderId) {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) fail(authError || new Error('Sign in is required.'));
@@ -144,7 +173,7 @@ export async function api(path, { method = 'GET', body } = {}) {
   }
 
   if (segments.length === 2 && method === 'PATCH') {
-    const updateBody = { ...(body || {}), updatedAt: new Date().toISOString() };
+    const updateBody = { ...(body || {}) };\n    if (!['prescriptionItems', 'consumption', 'therapyAssignments', 'messages'].includes(key)) updateBody.updatedAt = new Date().toISOString();
     const { data, error } = await supabase.from(table).update(updateBody).eq('id', segments[1]).select('*').single();
     if (error) fail(error);
     return { item: data };

@@ -123,7 +123,8 @@ export async function api(path, { method = 'GET', body } = {}) {
     }
     const status = query.get('status');
     if (status) request = request.eq('status', status);
-    request = request.order('createdAt', { ascending: false, nullsFirst: false })
+    const orderColumn = key === 'prescriptionItems' ? 'medicineName' : 'createdAt';
+    request = request.order(orderColumn, { ascending: false, nullsFirst: false })
       .range((page - 1) * limit, page * limit - 1);
     const { data, error, count } = await request;
     if (error) fail(error);
@@ -131,13 +132,20 @@ export async function api(path, { method = 'GET', body } = {}) {
   }
 
   if (segments.length === 1 && method === 'POST') {
-    const { data, error } = await supabase.from(table).insert(body || {}).select('*').single();
+    const insertBody = { ...(body || {}), id: body?.id || crypto.randomUUID(), updatedAt: new Date().toISOString() };
+    if (key === 'messages' && !insertBody.senderId) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) fail(authError || new Error('Sign in is required.'));
+      insertBody.senderId = user.id;
+    }
+    const { data, error } = await supabase.from(table).insert(insertBody).select('*').single();
     if (error) fail(error);
     return { item: data };
   }
 
   if (segments.length === 2 && method === 'PATCH') {
-    const { data, error } = await supabase.from(table).update(body || {}).eq('id', segments[1]).select('*').single();
+    const updateBody = { ...(body || {}), updatedAt: new Date().toISOString() };
+    const { data, error } = await supabase.from(table).update(updateBody).eq('id', segments[1]).select('*').single();
     if (error) fail(error);
     return { item: data };
   }

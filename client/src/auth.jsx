@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { supabase } from './api/supabase.js';
+import { isSupabaseConfigured, supabase } from './api/supabase.js';
 
 const AuthContext = createContext(null);
 
@@ -68,6 +68,7 @@ export function AuthProvider({ children }) {
   }, [refresh]);
 
   const login = async (email, password) => {
+    if (!isSupabaseConfigured) throw new Error('LIVYA sign-in is not configured yet. Add the Supabase URL and publishable key to the Vercel frontend environment.');
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
       password,
@@ -79,6 +80,7 @@ export function AuthProvider({ children }) {
   };
 
   const register = async (email, password, fullName) => {
+    if (!isSupabaseConfigured) throw new Error('LIVYA registration is not configured.');
     if (import.meta.env.VITE_ALLOW_PUBLIC_REGISTRATION !== 'true') {
       throw new Error('Registration is restricted. Contact your administrator.');
     }

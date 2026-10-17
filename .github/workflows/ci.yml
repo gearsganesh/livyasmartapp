@@ -45,6 +45,21 @@ jobs:
         working-directory: server
         run: npx prisma generate
 
+      - name: Generate initial migration preview
+        working-directory: server
+        run: |
+          mkdir -p /tmp/livya-prisma-migration
+          npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > /tmp/livya-prisma-migration/migration.sql
+          test -s /tmp/livya-prisma-migration/migration.sql
+
+      - name: Upload generated migration preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: livya-initial-prisma-migration
+          path: /tmp/livya-prisma-migration/migration.sql
+          if-no-files-found: error
+          retention-days: 3
+
       - name: Check backend JavaScript syntax
         working-directory: server
         shell: bash

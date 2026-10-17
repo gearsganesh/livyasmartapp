@@ -161,7 +161,8 @@ export async function api(path, { method = 'GET', body } = {}) {
   }
 
   if (segments.length === 1 && method === 'POST') {
-    const insertBody = { ...(body || {}), id: body?.id || crypto.randomUUID() };\n    if (!['prescriptionItems', 'consumption', 'therapyAssignments', 'messages'].includes(key)) insertBody.updatedAt = new Date().toISOString();
+    const insertBody = { ...(body || {}), id: body?.id || crypto.randomUUID() };
+    if (!['prescriptionItems', 'consumption', 'therapyAssignments', 'messages'].includes(key)) insertBody.updatedAt = new Date().toISOString();
     if (key === 'messages' && !insertBody.senderId) {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) fail(authError || new Error('Sign in is required.'));
@@ -173,7 +174,8 @@ export async function api(path, { method = 'GET', body } = {}) {
   }
 
   if (segments.length === 2 && method === 'PATCH') {
-    const updateBody = { ...(body || {}) };\n    if (!['prescriptionItems', 'consumption', 'therapyAssignments', 'messages'].includes(key)) updateBody.updatedAt = new Date().toISOString();
+    const updateBody = { ...(body || {}) };
+    if (!['prescriptionItems', 'consumption', 'therapyAssignments', 'messages'].includes(key)) updateBody.updatedAt = new Date().toISOString();
     const { data, error } = await supabase.from(table).update(updateBody).eq('id', segments[1]).select('*').single();
     if (error) fail(error);
     return { item: data };

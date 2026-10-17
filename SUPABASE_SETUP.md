@@ -19,7 +19,7 @@ NODE_ENV=production
 PORT=4000
 DATABASE_URL=postgresql://postgres:[URL_ENCODED_PASSWORD]@[DESIGNATED_PROJECT_DB_HOST]:5432/postgres?sslmode=require
 JWT_SECRET=[random-secret-at-least-32-bytes]
-CLIENT_ORIGIN=https://app.livyacurehub.com
+CLIENT_ORIGINS=https://app.livyacurehub.com,https://admin.livyacurehub.com
 COOKIE_NAME=livya_session
 ALLOW_PUBLIC_REGISTRATION=false
 ```
@@ -39,6 +39,7 @@ Use the connection string from the designated Supabase project's Dashboard -> Co
 - Client: Vercel project rooted at `client/`, production domain `app.livyacurehub.com`.
 - Admin: configure a separate deployment only after verifying that the current frontend actually has an admin route/entry point suitable for a separate hostname; target domain `admin.livyacurehub.com`.
 - API: deploy the Express service to a Node-compatible host and set `CLIENT_ORIGIN`, database URL, and JWT secret there.
-- Ensure HTTPS, cookie `Secure` in production, and correct CORS credentials configuration before testing cross-domain sessions.
+- The API now accepts a comma-separated `CLIENT_ORIGINS` allowlist (both `https://app.livyacurehub.com` and `https://admin.livyacurehub.com`). Keep the origins exact, with no trailing slash. `CLIENT_ORIGIN` remains as a single-origin fallback for older deployments.
+- Ensure HTTPS and cookie `Secure` in production before testing cross-domain sessions.
 
 Never commit database passwords, JWT secrets, service-role keys, or real patient/clinical data.

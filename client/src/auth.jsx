@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { isSupabaseConfigured, supabase } from './api/supabase.js';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext(null);\nconst SESSION_STARTED_KEY = 'livya-session-started-at';\nconst SESSION_MAX_AGE_MS = 3 * 60 * 60 * 1000;
 
 async function loadProfile(authUser) {
   if (!authUser) return null;
@@ -46,7 +46,11 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let mounted = true;
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') localStorage.removeItem(SESSION_STARTED_KEY);
+      if (event === 'SIGNED_IN' && session && !localStorage.getItem(SESSION_STARTED_KEY)) {
+        localStorage.setItem(SESSION_STARTED_KEY, String(Date.now()));
+      }
       // Defer the profile query so it doesn't run inside the auth callback lock.
       Promise.resolve().then(async () => {
         if (!mounted) return;

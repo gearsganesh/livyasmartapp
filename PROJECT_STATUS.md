@@ -1,20 +1,38 @@
-# Phase 3 / Phase 4 delivery status
+# LIVYA CureHub delivery status
 
-## Implemented in this package
-- PostgreSQL schema for 26 models and 7 enums, with foreign keys, indexes, unique constraints, audit log, patient-account linkage, and an initial SQL migration.
-- Express API: authentication, session validation, role checks, dashboard aggregates, user provisioning, CRUD endpoints for 23 resource modules, patient-scoped reads for linked client accounts, and audit events on resource writes.
-- React/Vite frontend: login/register gates, cookie-backed auth provider, protected routes, role-aware sidebar, dashboard, responsive tables, search/status filters/pagination, create/edit forms, loading/error/empty states, user administration, role-permission screen, and audit trail.
-- Vercel SPA rewrite and Netlify redirect configuration.
+## Present in the repository
+- React/Vite client application under `client/`.
+- Express API under `server/`.
+- Prisma PostgreSQL schema under `server/prisma/schema.prisma`.
+- Authentication/session code with HTTP-only cookies and a three-hour session lifetime.
+- Initial GitHub Actions CI workflow at `.github/workflows/ci.yml` to build the client, validate/generate Prisma, and syntax-check backend JavaScript.
 
-## Verification performed
-- Node syntax checks passed for all backend JavaScript files.
-- TypeScript JSX parser syntax checks passed for all frontend JavaScript/JSX files.
-- Static cross-check found 26 Prisma models, 26 SQL tables, 7 SQL enums, and matching 23 frontend/backend resource keys.
+## Verified deployment/database status
+- Source is committed to the `main` branch.
+- A CI run was triggered by the latest push; its final result must be checked before treating build/schema checks as passed.
+- No SQL migration file currently exists under `server/prisma/migrations/`. The directory contains only its README and migration lock file. Do not run `prisma migrate deploy` until a real initial migration is generated and reviewed.
+- The user's designated Supabase project is `ekyvogemusxmgeefrqmc` (Livya Smart App). The connected Supabase integration currently returns a permission error for that project. Do not substitute another Supabase project.
+- No LIVYA project was found in the connected Vercel account. Production deployment and custom-domain mapping remain unverified.
+- Repository visibility is currently public. Because this is healthcare application source, change it to private before adding deployment configuration or patient-related implementation details.
 
-## Verification not possible in this execution environment
-- `npm install` timed out, so dependency installation, Prisma client generation/schema validation, an actual Vite production build, API integration tests, and database migration execution could not be run here.
-- The migration was generated from the included Prisma schema and must be validated with `npx prisma validate` and tested against a disposable PostgreSQL database before applying to any shared or production database.
-- The live database, existing Supabase projects, and existing Vercel deployments were not modified.
+## Not yet verified
+- Client production build.
+- Prisma schema validation and client generation.
+- Initial SQL migration generated from the exact Prisma schema.
+- Database schema installation on the designated Supabase project.
+- Superadmin bootstrap and first login.
+- API deployment, client/admin deployments, custom domains, cookies/CORS across domains.
+- Integration tests for permissions, patient data isolation, session expiry/revocation, and CRUD operations.
 
-## Important clinical production gates
-This is a functional implementation baseline, not a claim of clinical certification. Before production use, complete a security review, test all role and patient-isolation cases, review retention/deletion requirements, add secure document storage and file scanning, verify backups/restoration, add prescription/order transaction workflows, validate clinical state transitions, and conduct acceptance testing with synthetic data.
+## Required order of work
+1. Make the GitHub repository private.
+2. Restore access to the designated Supabase project `ekyvogemusxmgeefrqmc`.
+3. Run and inspect the GitHub Actions CI result; fix any failures.
+4. Generate the initial Prisma migration from the current schema using Prisma CLI, review it, and commit the SQL.
+5. Test the migration against a disposable PostgreSQL database, then apply it only to the designated Supabase project.
+6. Bootstrap a Superadmin using a unique password and remove bootstrap environment values.
+7. Deploy the API and client/admin apps, configure secrets in hosting settings, and map `app.livyacurehub.com` and `admin.livyacurehub.com`.
+8. Complete security and end-to-end tests with synthetic data before clinical use.
+
+## Safety note
+No production readiness or clinical certification is implied. Never commit database passwords, JWT secrets, service-role keys, patient data, or real clinical records.

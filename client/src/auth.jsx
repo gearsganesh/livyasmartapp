@@ -14,7 +14,7 @@ async function loadProfile(authUser) {
     .maybeSingle();
   if (error) throw error;
   if (!data || !data.isActive) {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
     throw new Error('This account is not enabled for LIVYA. Contact your administrator.');
   }
   return {
@@ -27,14 +27,32 @@ async function loadProfile(authUser) {
   };
 }
 
+function sessionExpired() {
+  const startedAt = Number(localStorage.getItem(SESSION_STARTED_KEY));
+  return startedAt > 0 && Date.now() - startedAt >= SESSION_MAX_AGE_MS;
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     try {
+      if (!isSupabaseConfigured) {
+        setUser(null);
+        return null;
+      }
       const { data: { user: authUser }, error } = await supabase.auth.getUser();
       if (error) throw error;
+      if (authUser && sessionExpired()) {
+        await supabase.auth.signOut({ scope: 'local' });
+        localStorage.removeItem(SESSION_STARTED_KEY);
+        setUser(null);
+        return null;
+      }
+      if (authUser && !localStorage.getItem(SESSION_STARTED_KEY)) {
+        localStorage.setItem(SESSION_STARTED_KEY, String(Date.now()));
+      }
       const profile = await loadProfile(authUser);
       setUser(profile);
       return profile;
@@ -53,10 +71,15 @@ export function AuthProvider({ children }) {
       if (event === 'SIGNED_IN' && session && !localStorage.getItem(SESSION_STARTED_KEY)) {
         localStorage.setItem(SESSION_STARTED_KEY, String(Date.now()));
       }
-      // Defer the profile query so it doesn't run inside the auth callback lock.
+      // Run profile queries after the auth callback releases Supabase's internal lock.
       Promise.resolve().then(async () => {
         if (!mounted) return;
         try {
+          if (session && sessionExpired()) {
+            await supabase.auth.signOut({ scope: 'local' });
+            if (mounted) setUser(null);
+            return;
+          }
           const profile = await loadProfile(session?.user || null);
           if (mounted) setUser(profile);
         } catch {
@@ -73,40 +96,40 @@ export function AuthProvider({ children }) {
     };
   }, [refresh]);
 
+  useEffect(() => {
+    if (!user) return;
+    const startedAt = Number(localStorage.getItem(SESSION_STARTED_KEY)) || Date.now();
+    const remaining = Math.max(0, SESSION_MAX_AGE_MS - (Date.now() - startedAt));
+    const timer = window.setTimeout(async () => {
+      await supabase.auth.signOut({ scope: 'local' });
+      localStorage.removeItem(SESSION_STARTED_KEY);
+      setUser(null);
+    }, remaining);
+    return () => window.clearTimeout(timer);
+  }, [user]);
+
   const login = async (email, password) => {
-    if (!isSupabaseConfigured) throw new Error('LIVYA sign-in is not configured yet. Add the Supabase URL and publishable key to the Vercel frontend environment.');
+    if (!isSupabaseConfigured) {
+      throw new Error('LIVYA sign-in is not configured yet. Add the Supabase URL and publishable key to the Vercel frontend environment.');
+    }
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
       password,
     });
     if (error) throw new Error(error.message === 'Invalid login credentials' ? 'Invalid email or password.' : error.message);
+    localStorage.setItem(SESSION_STARTED_KEY, String(Date.now()));
     const profile = await loadProfile(data.user);
     setUser(profile);
     return profile;
   };
 
-  const register = async (email, password, fullName) => {
-    if (!isSupabaseConfigured) throw new Error('LIVYA registration is not configured.');
-    if (import.meta.env.VITE_ALLOW_PUBLIC_REGISTRATION !== 'true') {
-      throw new Error('Registration is restricted. Contact your administrator.');
-    }
-    const { data, error } = await supabase.auth.signUp({
-      email: email.trim().toLowerCase(),
-      password,
-      options: { data: { full_name: fullName.trim(), requested_role: 'CLIENT' } },
-    });
-    if (error) throw error;
-    if (!data.user || !data.session) {
-      throw new Error('Check your email to confirm your account before signing in.');
-    }
-    // A public signup must not grant a role by user-supplied metadata. The matching
-    // public.User profile is provisioned by the trusted admin workflow, not the browser.
-    await supabase.auth.signOut();
-    throw new Error('Public registration is not enabled for this deployment. Contact your administrator.');
+  const register = async () => {
+    throw new Error('Registration is restricted. Contact your administrator.');
   };
 
   const logout = async () => {
     const { error } = await supabase.auth.signOut({ scope: 'local' });
+    localStorage.removeItem(SESSION_STARTED_KEY);
     setUser(null);
     if (error) throw error;
   };

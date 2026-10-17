@@ -26,7 +26,7 @@ CREATE TYPE "BookingStatus" AS ENUM ('REQUESTED', 'CONFIRMED', 'SAMPLE_COLLECTED
 CREATE TABLE "User" (
     "id" UUID NOT NULL,
     "email" VARCHAR(254) NOT NULL,
-    "passwordHash" TEXT NOT NULL,
+    "passwordHash" TEXT,
     "fullName" VARCHAR(160) NOT NULL,
     "role" "UserRole" NOT NULL DEFAULT 'CLIENT',
     "isActive" BOOLEAN NOT NULL DEFAULT true,

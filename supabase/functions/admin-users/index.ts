@@ -37,6 +37,9 @@ Deno.serve(async (req: Request) => {
   const { data: authData, error: authError } = await callerClient.auth.getUser(token);
   if (authError || !authData.user) return reply(401, { error: "Your session is invalid or expired." });
 
+  const { data: currentRole, error: roleError } = await callerClient.rpc("livya_current_role");
+  if (roleError || !currentRole) return reply(401, { error: "Your session has expired. Sign in again." });
+
   const { data: caller, error: callerError } = await adminClient
     .from("User").select("id,email,fullName,role,isActive")
     .eq("id", authData.user.id).maybeSingle();

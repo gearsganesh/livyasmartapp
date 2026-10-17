@@ -1,44 +1,38 @@
 # LIVYA CureHub delivery status
 
-## Present in the repository
-- React/Vite client application under `client/`.
-- Express API under `server/`, exported from `server/src/app.js` for Vercel's native Express detection.
-- Prisma PostgreSQL schema under `server/prisma/schema.prisma`.
-- Initial schema migration generated from the Prisma schema: `server/prisma/migrations/20261017000000_initial_livya_schema/migration.sql`.
-- Security migration `server/prisma/migrations/20261017010000_lock_down_public_data_api/migration.sql` enables RLS on all 26 application tables and revokes direct table grants from Supabase `anon` and `authenticated` roles when present. The app's Express API uses server-side Prisma access; browser clients must not query clinical tables directly.
-- Authentication/session code with HTTP-only cookies and a three-hour session lifetime.
-- GitHub Actions CI builds the client, validates and generates Prisma Client, generates/commits the initial migration, applies all migrations to a clean temporary PostgreSQL database, and syntax-checks backend JavaScript.
+## Current architecture
+- Frontend: React/Vite in `client/`, hosted on Vercel at `app.livyacurehub.com`.
+- Authentication: Supabase Auth email/password with the user's UUID mapped to `public."User".id`.
+- Data access: Supabase PostgREST directly from the browser, protected by PostgreSQL Row Level Security (RLS).
+- Privileged user provisioning: Supabase Edge Function `admin-users` with JWT verification enabled; the service-role key remains server-side.
+- No separate Express API domain is required for Option A. The legacy Express/Prisma backend remains in the repository but is no longer called by the frontend.
+- The frontend implements a three-hour local session timeout; RLS role resolution and the admin Edge Function also check the age of the underlying Supabase Auth session.
 
-## Verified checks
-- Client production build passed in GitHub Actions.
-- Prisma schema validation passed.
-- Prisma Client generation passed.
-- Initial migration generation passed.
-- `prisma migrate deploy` passed against a clean temporary PostgreSQL service with both migrations present.
-- Backend JavaScript syntax checks passed.
-- These checks validate the schema and build, not end-to-end clinical workflows or the hosted database.
+## Hosted Supabase project
+- Project: `livyasmartapp`, reference `wbwbvyhvxynfcvisgiun`, region Mumbai (`ap-south-1`).
+- 26 application tables exist; all 26 have RLS enabled.
+- 55 policies were present after the initial RLS setup. Role-specific write policies and sensitive-read restrictions were subsequently tightened.
+- Supabase Edge Function `admin-users` is deployed and active, version 4, with JWT verification enabled.
+- No user profiles or initial Superadmin accounts have been created yet.
+- The old `Livya HIMS` project was not modified.
 
-## Hosted database status
-- No migrations have been applied to any hosted Supabase project from this workflow.
-- The previously designated project `ekyvogemusxmgeefrqmc` is not visible in the connected Supabase project list and returns a permission error when queried.
-- The connected account does show `wbwbvyhvxynfcvisgiun` named `livyasmartapp`, but it has existing Supabase migration history while its `public` table listing is empty. Do not apply the LIVYA migrations there until the user confirms it is the intended project.
-- Restore access to the intended Supabase project or confirm the correct project reference before applying migrations and bootstrapping the first Superadmin.
+## Source changes on main
+- Supabase JS dependency and browser client configuration.
+- Login/session provider switched from Express cookies to Supabase Auth.
+- Generic resource CRUD and dashboard queries switched to Supabase direct data access.
+- Admin account listing/creation/status changes route through the `admin-users` Edge Function.
+- Supabase SQL migrations are versioned under `supabase/migrations/`, with filenames aligned to the applied migration versions.
+- `SUPABASE_SETUP.md` documents the new deployment architecture and remaining configuration.
 
-## Deployment status
-- API code is prepared for a Vercel project rooted at `server/`; its package install generates Prisma Client.
-- Frontend project root is `client/`. Set `VITE_API_URL=https://api.livyacurehub.com` for production.
-- API production variables must be configured in Vercel: `DATABASE_URL`, a strong `JWT_SECRET` (32+ bytes), `CLIENT_ORIGINS=https://app.livyacurehub.com,https://admin.livyacurehub.com`, `COOKIE_NAME=livya_session`, and `ALLOW_PUBLIC_REGISTRATION=false`.
-- No production deployment or custom-domain mapping has been performed. User intends to deploy through Vercel after the database is ready.
-- Repository visibility is currently public. Change it to private before production setup because this is healthcare application source.
+## Not yet verified / still required
+- Latest GitHub Actions CI build was still running at last check; wait for a successful run before relying on the current code.
+- Configure the Supabase publishable/anon key as `VITE_SUPABASE_ANON_KEY` in Vercel and redeploy the frontend. This key is browser-safe; never use the service-role key.
+- Configure Supabase Auth Site URL and redirect URLs for `https://app.livyacurehub.com`.
+- Create two initial Superadmin Auth users and matching `public."User"` profiles with unique strong passwords.
+- Test login, refresh persistence, logout, three-hour expiry, user management, and CRUD for each role using synthetic data.
+- Perform a complete RLS penetration/negative test: clients must not access another client's data, and each staff role must be restricted to its intended resources.
+- Vercel project access was not available through the connected tools, so no Vercel environment variables or deployment settings were changed by this workflow.
+- Repository visibility is still public. Make it private before using real clinical data.
 
-## Remaining before deployment
-1. Change the GitHub repository to private.
-2. Confirm access to the intended Supabase project.
-3. Review the committed SQL migrations and apply them only to the confirmed project.
-4. Create the initial Superadmin with a unique password of at least 16 characters, then remove bootstrap environment values.
-5. Test login/logout, role enforcement, patient isolation, session expiry/revocation, and core CRUD workflows using synthetic data.
-6. Deploy the API and frontend to Vercel, configure environment variables, and map custom domains.
-7. Perform end-to-end smoke tests against the deployed API and frontend before using real clinical data.
-
-## Safety note
-No production readiness or clinical certification is implied. Never commit database passwords, JWT secrets, service-role keys, patient data, or real clinical records.
+## Safety
+The app is not yet production-ready for real clinical data. Do not commit service-role keys, database credentials, passwords, or patient data. UI visibility is not authorization; RLS is the database security boundary.

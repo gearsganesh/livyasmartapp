@@ -20,7 +20,7 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return reply(405, { error: "Method not allowed." });
 
-  const token = (req.headers.get("Authorization") || "").replace(/^Bearer\\s+/i, "");
+  const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
   if (!token) return reply(401, { error: "Sign in is required." });
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -68,7 +68,7 @@ Deno.serve(async (req: Request) => {
       ? ["ADMIN", "CLINICIAN", "NUTRITIONIST", "THERAPIST", "STAFF", "CLIENT", "LAB_PARTNER"]
       : ["CLINICIAN", "NUTRITIONIST", "THERAPIST", "STAFF", "CLIENT", "LAB_PARTNER"];
 
-    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || fullName.length < 2 ||
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || fullName.length < 2 ||
         fullName.length > 160 || password.length < 16 || password.length > 128 ||
         !allowedRoles.includes(role)) {
       return reply(400, { error: "Enter a valid email, name, a password of at least 16 characters, and an allowed role." });

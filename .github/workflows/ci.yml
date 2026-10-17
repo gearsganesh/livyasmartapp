@@ -16,6 +16,20 @@ jobs:
     timeout-minutes: 15
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/livya_ci?schema=public
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: livya_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d livya_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -54,6 +68,7 @@ jobs:
           mkdir -p "$migration_dir"
           npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > "$migration_dir/migration.sql"
           test -s "$migration_dir/migration.sql"
+          npx prisma migrate deploy
           git add "$migration_dir/migration.sql"
           if git diff --cached --quiet; then
             echo "Initial migration is already committed; no changes to push."

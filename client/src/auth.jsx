@@ -1,7 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { isSupabaseConfigured, supabase } from './api/supabase.js';
 
-const AuthContext = createContext(null);\nconst SESSION_STARTED_KEY = 'livya-session-started-at';\nconst SESSION_MAX_AGE_MS = 3 * 60 * 60 * 1000;
+const AuthContext = createContext(null);
+const SESSION_STARTED_KEY = 'livya-session-started-at';
+const SESSION_MAX_AGE_MS = 3 * 60 * 60 * 1000;
 
 async function loadProfile(authUser) {
   if (!authUser) return null;

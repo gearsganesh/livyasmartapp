@@ -1,0 +1,6 @@
+node_modules/
+.env
+.env.*.local
+client/dist/
+server/prisma/migrations/*/
+!server/prisma/migrations/README.md

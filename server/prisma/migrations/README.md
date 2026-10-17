@@ -1,0 +1,1 @@
+Generate the first migration locally with `npx prisma migrate dev --name initial_livya_schema`, then commit the generated migration SQL directory. In production run `npx prisma migrate deploy`; never run `migrate dev` against production.

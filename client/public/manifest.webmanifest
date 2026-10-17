@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "LIVYA Cure Hub",
+  "short_name": "LIVYA",
+  "description": "Your connected care and health services.",
+  "start_url": "/login",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#fbf8f6",
+  "theme_color": "#a6242f",
+  "icons": [
+    {
+      "src": "/livya-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

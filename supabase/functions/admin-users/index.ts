@@ -92,7 +92,7 @@ Deno.serve(async (req: Request) => {
     }
 
     await adminClient.from("AuditLog").insert({
-      actorId: caller.id, action: "USER_CREATED", resource: "User", resourceId: profile.id,
+      id: crypto.randomUUID(), actorId: caller.id, action: "USER_CREATED", resource: "User", resourceId: profile.id,
     });
     return reply(201, { item: profile });
   }
@@ -120,7 +120,7 @@ Deno.serve(async (req: Request) => {
     if (updateError) return reply(500, { error: "Unable to update account status." });
     await adminClient.auth.admin.updateUserById(id, { ban_duration: isActive ? "none" : "876000h" });
     await adminClient.from("AuditLog").insert({
-      actorId: caller.id, action: isActive ? "USER_ACTIVATED" : "USER_DEACTIVATED",
+      id: crypto.randomUUID(), actorId: caller.id, action: isActive ? "USER_ACTIVATED" : "USER_DEACTIVATED",
       resource: "User", resourceId: id,
     });
     return reply(200, { success: true });

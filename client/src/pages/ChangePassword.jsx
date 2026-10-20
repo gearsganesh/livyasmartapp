@@ -37,15 +37,15 @@ export default function ChangePassword() {
     <section className="panel password-setup-panel">
       <div className="brand-mark large">L</div>
       <div className="eyebrow">SECURE YOUR ACCOUNT</div>
-      <h1>Change your temporary password</h1>
-      <p>Welcome, {user?.fullName}. Set a private password before accessing your LIVYA account and health information.</p>
+      <h1>{user?.mustChangePassword ? "Change your temporary password" : "Change your password"}</h1>
+      <p>Welcome, {user?.fullName}. {user?.mustChangePassword ? "Set a private password before accessing your LIVYA account and health information." : "Choose a private password to keep your LIVYA account secure."}</p>
       <form className="form-stack" onSubmit={submit}>
         <label>New password<input autoFocus type="password" autoComplete="new-password" minLength={8} maxLength={128} required value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters"/></label>
         <label>Confirm new password<input type="password" autoComplete="new-password" minLength={8} maxLength={128} required value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Enter it again"/></label>
         {error && <div role="alert" className="form-error">{error}</div>}
         <button className="primary-button full" disabled={busy}>{busy ? 'Updating password…' : 'Save new password'} <KeyRound size={16}/></button>
       </form>
-      <div className="auth-bottom"><ShieldCheck size={15}/><span>Your health records remain locked until this step is complete.</span></div>
+      <div className="auth-bottom"><ShieldCheck size={15}/><span>{user?.mustChangePassword ? "Your health records remain locked until this step is complete." : "Your password is updated securely through LIVYA authentication."}</span></div>
       <button className="text-link" onClick={() => logout().then(() => navigate('/login'))}>Sign out</button>
     </section>
   </main>;

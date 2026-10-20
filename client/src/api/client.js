@@ -118,12 +118,32 @@ export async function api(path, { method = 'GET', body } = {}) {
     };
   }
 
-  if (segments[0] === 'lookups' && segments[1] === 'patients') {
-    const { data, error } = await supabase
-      .from('Patient')
-      .select('id,fullName,patientCode')
-      .order('fullName')
-      .limit(500);
+  if (segments[0] === 'lookups' && segments[1]) {
+    const lookups = {
+      patients: { table: 'Patient', select: 'id,fullName,patientCode', order: 'fullName' },
+      programs: { table: 'Program', select: 'id,name,category,status', order: 'name' },
+      plans: { table: 'PatientPlan', select: 'id,patientId,status,startDate,endDate', order: 'createdAt' },
+      prescriptions: { table: 'Prescription', select: 'id,patientId,status,issuedAt', order: 'issuedAt' },
+      medicines: { table: 'Medicine', select: 'id,name,genericName,strength,isActive', order: 'name' },
+      therapists: { table: 'Therapist', select: 'id,fullName,specializations,status', order: 'fullName' },
+      therapies: { table: 'Therapy', select: 'id,name,category,status', order: 'name' },
+      products: { table: 'StoreProduct', select: 'id,name,sku,status', order: 'name' },
+      orders: { table: 'StoreOrder', select: 'id,orderNumber,status,patientId', order: 'createdAt' },
+      orderItems: { table: 'StoreOrderItem', select: 'id,orderId,productName,quantity', order: 'createdAt' },
+      labs: { table: 'LabPartner', select: 'id,name,status', order: 'name' },
+      users: { table: 'User', select: 'id,fullName,email,role,isActive', order: 'fullName' },
+      recipients: { table: 'User', select: 'id,fullName,email,role,isActive', order: 'fullName' },
+      records: { table: 'ClinicalRecord', select: 'id,patientId,recordType,title,status,createdAt', order: 'createdAt' },
+    };
+    const config = lookups[segments[1]];
+    if (!config) throw new Error('Unknown lookup list.');
+    let request = supabase.from(config.table).select(config.select).order(config.order, { ascending: false, nullsFirst: false }).limit(500);
+    if (['users', 'recipients'].includes(segments[1])) request = request.eq('isActive', true);
+    if (['programs', 'medicines', 'therapists', 'therapies', 'products', 'labs'].includes(segments[1])) {
+      if (segments[1] === 'medicines') request = request.eq('isActive', true);
+      else request = request.neq('status', 'ARCHIVED');
+    }
+    const { data, error } = await request;
     if (error) fail(error);
     return { items: data || [], total: (data || []).length };
   }

@@ -120,6 +120,7 @@ model Patient {
   labBookings LabBooking[]
   storeOrders StoreOrder[]
   invoices Invoice[]
+  therapistAssignments TherapistAssignment[]
   messages Message[]
   @@index([fullName])
   @@index([status,createdAt])
@@ -346,13 +347,14 @@ model TherapistAssignment {
   id String @id @default(uuid()) @db.Uuid
   therapistId String @db.Uuid
   therapyId String @db.Uuid
-  patientId String? @db.Uuid
+  patientId String @db.Uuid
   scheduledAt DateTime?
   status RecordStatus @default(PENDING)
   notes String? @db.Text
   createdAt DateTime @default(now())
   therapist Therapist @relation(fields:[therapistId],references:[id],onDelete:Cascade)
   therapy Therapy @relation(fields:[therapyId],references:[id],onDelete:Restrict)
+  patient Patient @relation(fields:[patientId],references:[id],onDelete:Restrict)
   @@index([scheduledAt,status])
 }
 model StoreProduct {
@@ -372,7 +374,7 @@ model StoreProduct {
 model StoreOrder {
   id String @id @default(uuid()) @db.Uuid
   orderNumber String @unique @db.VarChar(60)
-  patientId String? @db.Uuid
+  patientId String @db.Uuid
   status OrderStatus @default(PENDING)
   currency String @default("INR") @db.VarChar(3)
   subtotal Decimal @default(0) @db.Decimal(12,2)
@@ -382,7 +384,7 @@ model StoreOrder {
   notes String? @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  patient Patient? @relation(fields:[patientId],references:[id],onDelete:SetNull)
+  patient Patient @relation(fields:[patientId],references:[id],onDelete:Restrict)
   items StoreOrderItem[]
   @@index([status,createdAt])
 }

@@ -119,6 +119,7 @@ model Patient {
   aiReviews AIReview[]
   labBookings LabBooking[]
   storeOrders StoreOrder[]
+  invoices Invoice[]
   messages Message[]
   @@index([fullName])
   @@index([status,createdAt])

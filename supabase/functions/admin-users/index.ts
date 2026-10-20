@@ -197,6 +197,7 @@ Deno.serve(async (req: Request) => {
   }
 
   if (input.action === "status") {
+    if (caller.role !== "SUPERADMIN") return reply(403, { error: "Only a superadmin can activate or deactivate user accounts." });
     const id = typeof input.id === "string" ? input.id : "";
     const isActive = input.isActive;
     if (!id || typeof isActive !== "boolean") return reply(400, { error: "A user ID and active status are required." });

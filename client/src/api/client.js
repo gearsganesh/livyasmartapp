@@ -127,7 +127,7 @@ export async function api(path, { method = 'GET', body } = {}) {
       medicines: { table: 'Medicine', select: 'id,name,genericName,strength,isActive', order: 'name' },
       therapists: { table: 'Therapist', select: 'id,fullName,specializations,status', order: 'fullName' },
       therapies: { table: 'Therapy', select: 'id,name,category,status', order: 'name' },
-      products: { table: 'StoreProduct', select: 'id,name,sku,status', order: 'name' },
+      products: { table: 'StoreProduct', select: 'id,name,sku,status,price', order: 'name' },
       orders: { table: 'StoreOrder', select: 'id,orderNumber,status,patientId', order: 'createdAt' },
       orderItems: { table: 'StoreOrderItem', select: 'id,orderId,productName,quantity', order: 'createdAt' },
       labs: { table: 'LabPartner', select: 'id,name,status', order: 'name' },

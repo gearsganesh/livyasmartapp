@@ -319,7 +319,7 @@ CREATE TABLE "TherapistAssignment" (
     "id" UUID NOT NULL,
     "therapistId" UUID NOT NULL,
     "therapyId" UUID NOT NULL,
-    "patientId" UUID,
+    "patientId" UUID NOT NULL,
     "scheduledAt" TIMESTAMP(3),
     "status" "RecordStatus" NOT NULL DEFAULT 'PENDING',
     "notes" TEXT,
@@ -348,7 +348,7 @@ CREATE TABLE "StoreProduct" (
 CREATE TABLE "StoreOrder" (
     "id" UUID NOT NULL,
     "orderNumber" VARCHAR(60) NOT NULL,
-    "patientId" UUID,
+    "patientId" UUID NOT NULL,
     "status" "OrderStatus" NOT NULL DEFAULT 'PENDING',
     "currency" VARCHAR(3) NOT NULL DEFAULT 'INR',
     "subtotal" DECIMAL(12,2) NOT NULL DEFAULT 0,
@@ -433,6 +433,25 @@ CREATE TABLE "AuditLog" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Invoice" (
+    "id" UUID NOT NULL,
+    "invoiceNumber" VARCHAR(40) NOT NULL,
+    "patientId" UUID NOT NULL,
+    "invoiceDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "dueDate" TIMESTAMP(3),
+    "status" VARCHAR(30) NOT NULL DEFAULT 'DRAFT',
+    "currency" VARCHAR(3) NOT NULL DEFAULT 'INR',
+    "subtotal" DECIMAL(12,2) NOT NULL DEFAULT 0,
+    "tax" DECIMAL(12,2) NOT NULL DEFAULT 0,
+    "total" DECIMAL(12,2) NOT NULL DEFAULT 0,
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Invoice_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -549,6 +568,15 @@ CREATE INDEX "AuditLog_resource_resourceId_createdAt_idx" ON "AuditLog"("resourc
 -- CreateIndex
 CREATE INDEX "AuditLog_actorId_createdAt_idx" ON "AuditLog"("actorId", "createdAt");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "Invoice_invoiceNumber_key" ON "Invoice"("invoiceNumber");
+
+-- CreateIndex
+CREATE INDEX "Invoice_patientId_invoiceDate_idx" ON "Invoice"("patientId", "invoiceDate");
+
+-- CreateIndex
+CREATE INDEX "Invoice_status_dueDate_idx" ON "Invoice"("status", "dueDate");
+
 -- AddForeignKey
 ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -601,7 +629,10 @@ ALTER TABLE "TherapistAssignment" ADD CONSTRAINT "TherapistAssignment_therapistI
 ALTER TABLE "TherapistAssignment" ADD CONSTRAINT "TherapistAssignment_therapyId_fkey" FOREIGN KEY ("therapyId") REFERENCES "Therapy"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "StoreOrder" ADD CONSTRAINT "StoreOrder_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "Patient"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "TherapistAssignment" ADD CONSTRAINT "TherapistAssignment_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "Patient"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "StoreOrder" ADD CONSTRAINT "StoreOrder_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "Patient"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "StoreOrderItem" ADD CONSTRAINT "StoreOrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "StoreOrder"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -620,4 +651,7 @@ ALTER TABLE "Message" ADD CONSTRAINT "Message_patientId_fkey" FOREIGN KEY ("pati
 
 -- AddForeignKey
 ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_actorId_fkey" FOREIGN KEY ("actorId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Invoice" ADD CONSTRAINT "Invoice_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "Patient"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 

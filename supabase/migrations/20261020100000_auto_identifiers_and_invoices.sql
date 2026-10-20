@@ -77,6 +77,7 @@ WHERE "invoiceNumber" IS NULL OR btrim("invoiceNumber") = '';
 
 ALTER TABLE public."Patient" ALTER COLUMN "patientCode" SET NOT NULL;
 ALTER TABLE public."Appointment" ALTER COLUMN "appointmentNumber" SET NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS "Appointment_appointmentNumber_key" ON public."Appointment" ("appointmentNumber");
 ALTER TABLE public."LabBooking" ALTER COLUMN "bookingNumber" SET NOT NULL;
 ALTER TABLE public."StoreOrder" ALTER COLUMN "orderNumber" SET NOT NULL;
 

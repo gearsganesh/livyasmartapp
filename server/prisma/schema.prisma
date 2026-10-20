@@ -452,3 +452,23 @@ model AuditLog {
   @@index([resource,resourceId,createdAt])
   @@index([actorId,createdAt])
 }
+
+
+model Invoice {
+  id String @id @default(uuid()) @db.Uuid
+  invoiceNumber String @unique @db.VarChar(40)
+  patientId String @db.Uuid
+  invoiceDate DateTime @default(now())
+  dueDate DateTime?
+  status String @default("DRAFT") @db.VarChar(30)
+  currency String @default("INR") @db.VarChar(3)
+  subtotal Decimal @default(0) @db.Decimal(12,2)
+  tax Decimal @default(0) @db.Decimal(12,2)
+  total Decimal @default(0) @db.Decimal(12,2)
+  notes String? @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  patient Patient @relation(fields:[patientId],references:[id],onDelete:Restrict)
+  @@index([patientId,invoiceDate])
+  @@index([status,dueDate])
+}

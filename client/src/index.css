@@ -23,3 +23,31 @@
 .password-setup-panel p{line-height:1.6;color:var(--muted,#786e69);margin:0}
 .password-setup-panel .brand-mark{margin-bottom:8px}
 .password-setup-panel .text-link{align-self:flex-start}
+
+
+/* Patient report center */
+.report-center{gap:20px}
+.report-upload-panel,.report-list-panel{overflow:hidden}
+.report-upload-form{padding:20px 22px 22px;display:flex;flex-direction:column;gap:16px}
+.report-upload-form label{display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:650;color:var(--ink,#3b302c)}
+.report-upload-form input,.report-upload-form select,.report-list-tools select{width:100%;min-width:0;border:1px solid var(--line,#e8dfda);border-radius:9px;background:var(--surface,#fff);padding:11px 12px;color:var(--ink,#3b302c);font:inherit;font-size:13px}
+.report-upload-form input[type=file]{padding:9px;background:#fff}
+.report-upload-form small,.report-upload-form .field-help{font-size:11px;font-weight:400;color:var(--muted,#857772)}
+.report-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.report-title-field,.report-file-field{grid-column:span 1}
+.report-patient-chip{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid #d5eade;border-radius:9px;background:#f4fbf7;color:#24714f;font-size:12px}
+.report-upload-footer{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:15px;border-top:1px solid var(--line,#e8dfda)}
+.report-upload-footer>span,.report-footnote{display:flex;align-items:center;gap:7px;color:var(--muted,#857772);font-size:11px}
+.report-list-tools{display:flex;align-items:center;gap:10px}
+.report-list-tools select{width:auto;max-width:300px}
+.report-empty{height:120px;text-align:center;color:var(--muted,#857772)}
+.report-empty svg{display:block;margin:0 auto 8px}
+.report-empty b,.report-empty span{display:block}
+.report-empty span{font-size:12px;margin-top:4px}
+.report-footnote{padding:13px 18px;border-top:1px solid var(--line,#e8dfda)}
+.report-client-note{display:flex;gap:15px;align-items:flex-start;padding:20px}
+.report-client-note h2{margin:0 0 6px;font-size:17px}
+.report-client-note p{margin:0;color:var(--muted,#857772);font-size:13px;line-height:1.6}
+.report-center .notice{display:flex;align-items:flex-start;gap:9px}
+.report-center .notice button{margin-left:auto}
+@media(max-width:700px){.report-form-grid{grid-template-columns:minmax(0,1fr)}.report-upload-form{padding:16px}.report-upload-footer{align-items:stretch;flex-direction:column}.report-upload-footer .primary-button{width:100%;justify-content:center}.report-list-tools{width:100%;justify-content:flex-end}.report-list-tools select{max-width:220px}.report-list-panel .table-toolbar{align-items:flex-start;gap:12px;flex-wrap:wrap}}

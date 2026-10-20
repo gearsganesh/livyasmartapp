@@ -9,7 +9,7 @@ async function loadProfile(authUser) {
   if (!authUser) return null;
   const { data, error } = await supabase
     .from('User')
-    .select('id,email,fullName,role,isActive,createdAt,updatedAt')
+    .select('id,email,fullName,role,isActive,mustChangePassword,createdAt,updatedAt')
     .eq('id', authUser.id)
     .maybeSingle();
   if (error) throw error;
@@ -23,6 +23,7 @@ async function loadProfile(authUser) {
     fullName: data.fullName,
     role: data.role,
     isActive: data.isActive,
+    mustChangePassword: Boolean(data.mustChangePassword),
     createdAt: data.createdAt,
   };
 }

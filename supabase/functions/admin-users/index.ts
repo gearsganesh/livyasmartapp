@@ -69,9 +69,9 @@ Deno.serve(async (req: Request) => {
       : ["CLINICIAN", "NUTRITIONIST", "THERAPIST", "STAFF", "CLIENT", "LAB_PARTNER"];
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || fullName.length < 2 ||
-        fullName.length > 160 || password.length < 16 || password.length > 128 ||
+        fullName.length > 160 || password.length < 8 || password.length > 128 ||
         !allowedRoles.includes(role)) {
-      return reply(400, { error: "Enter a valid email, name, a password of at least 16 characters, and an allowed role." });
+      return reply(400, { error: "Enter a valid email, name, a password of at least 8 characters, and an allowed role." });
     }
 
     const { data: created, error: createError } = await adminClient.auth.admin.createUser({

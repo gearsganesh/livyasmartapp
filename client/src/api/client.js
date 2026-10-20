@@ -2,6 +2,7 @@ import { supabase } from './supabase.js';
 
 const resourceTables = {
   patients: 'Patient',
+  invoices: 'Invoice',
   appointments: 'Appointment',
   alerts: 'VitalAlert',
   records: 'ClinicalRecord',
@@ -28,6 +29,7 @@ const resourceTables = {
 
 const searchableFields = {
   patients: ['fullName', 'patientCode', 'email', 'phone'],
+  invoices: ['invoiceNumber', 'status', 'notes'],
   appointments: ['title', 'appointmentType', 'location'],
   alerts: ['title', 'metric', 'observedValue'],
   records: ['title', 'recordType'],

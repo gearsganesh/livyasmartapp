@@ -157,8 +157,8 @@ Deno.serve(async (req: Request) => {
     const password = typeof input.password === "string" ? input.password : "";
     const role = typeof input.role === "string" ? input.role : "";
     const allowedRoles = caller.role === "SUPERADMIN"
-      ? ["ADMIN", "CLINICIAN", "NUTRITIONIST", "THERAPIST", "STAFF", "CLIENT", "LAB_PARTNER"]
-      : ["CLINICIAN", "NUTRITIONIST", "THERAPIST", "STAFF", "CLIENT", "LAB_PARTNER"];
+      ? ["ADMIN", "CLINICIAN", "NUTRITIONIST", "THERAPIST", "STAFF", "LAB_PARTNER"]
+      : ["CLINICIAN", "NUTRITIONIST", "THERAPIST", "STAFF", "LAB_PARTNER"];
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || fullName.length < 2 ||
         fullName.length > 160 || password.length < 8 || password.length > 128 ||

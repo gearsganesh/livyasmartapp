@@ -112,6 +112,8 @@ model Patient {
   appointments Appointment[]
   vitalAlerts VitalAlert[]
   clinicalRecords ClinicalRecord[]
+  reports PatientReport[]
+  labResults LabResult[]
   prescriptions Prescription[]
   nutritionAssessments NutritionAssessment[]
   planAssignments PatientPlan[]
@@ -474,4 +476,55 @@ model Invoice {
   patient Patient @relation(fields:[patientId],references:[id],onDelete:Restrict)
   @@index([patientId,invoiceDate])
   @@index([status,dueDate])
+}
+
+model PatientReport {
+  id String @id @default(uuid()) @db.Uuid
+  patientId String @db.Uuid
+  reportType String @default("Laboratory") @db.VarChar(80)
+  title String @db.VarChar(180)
+  reportDate DateTime @db.Date
+  originalFileName String @db.VarChar(255)
+  storagePath String @unique @db.Text
+  mimeType String @default("application/pdf") @db.VarChar(100)
+  fileSize BigInt
+  extractionStatus String @default("NOT_STARTED") @db.VarChar(40)
+  reviewStatus String @default("PENDING") @db.VarChar(40)
+  extractionError String? @db.Text
+  uploadedBy String? @db.Uuid
+  extractedAt DateTime?
+  reviewedBy String? @db.Uuid
+  reviewedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  labResults LabResult[]
+  @@index([patientId, reportDate])
+  @@index([extractionStatus, reviewStatus])
+}
+
+model LabResult {
+  id String @id @default(uuid()) @db.Uuid
+  reportId String @db.Uuid
+  patientId String @db.Uuid
+  testName String @db.VarChar(180)
+  testCode String? @db.VarChar(100)
+  value Decimal? @db.Decimal(18, 6)
+  unit String? @db.VarChar(80)
+  referenceRangeText String? @db.VarChar(160)
+  referenceLow Decimal? @db.Decimal(18, 6)
+  referenceHigh Decimal? @db.Decimal(18, 6)
+  labFlag String? @db.VarChar(40)
+  resultDate DateTime @db.Date
+  confidence Decimal? @db.Decimal(4, 3)
+  sourceText String? @db.Text
+  reviewStatus String @default("PENDING") @db.VarChar(40)
+  reviewedBy String? @db.Uuid
+  reviewedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  report PatientReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  @@index([patientId, testName, resultDate])
+  @@index([reportId])
 }

@@ -141,6 +141,10 @@ Deno.serve(async (req: Request) => {
       const { count } = await adminClient.from("User").select("id", { count: "exact", head: true }).eq("role","SUPERADMIN").eq("isActive",true);
       if ((count || 0) <= 1) return reply(400, { error: "At least one active superadmin must remain." });
     }
+    if (role === "CLIENT") {
+      const { data: linkedPatient } = await adminClient.from("Patient").select("id").eq("userId", id).maybeSingle();
+      if (!linkedPatient) return reply(400, { error: "A client role must be linked to a patient record. Use Enable client login from User access." });
+    }
     const { error: authUpdateError } = await adminClient.auth.admin.updateUserById(id, { email, email_confirm: true, user_metadata: { full_name: fullName } });
     if (authUpdateError) return reply(400, { error: authUpdateError.message.toLowerCase().includes("already") ? "That email is already in use." : "Unable to update the authentication account." });
     const { data: updated, error: updateError } = await adminClient.from("User").update({ email, fullName, role, updatedAt: new Date().toISOString() })

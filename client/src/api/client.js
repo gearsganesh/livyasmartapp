@@ -81,10 +81,16 @@ export async function api(path, { method = 'GET', body } = {}) {
       return edgeFunction('list', { limit: Number(query.get('limit') || 100) });
     }
     if (method === 'POST' && segments.length === 2) {
-      return edgeFunction('create', body || {});
+      return edgeFunction(body?.action || 'create', body || {});
     }
     if (method === 'PATCH' && segments.length === 4 && segments[3] === 'status') {
       return edgeFunction('status', { id: segments[2], ...(body || {}) });
+    }
+    if (method === 'PATCH' && segments.length === 3) {
+      return edgeFunction(body?.action || 'update', { id: segments[2], ...(body || {}) });
+    }
+    if (method === 'POST' && segments.length === 4 && segments[3] === 'password') {
+      return edgeFunction('reset_password', { id: segments[2], ...(body || {}) });
     }
     throw new Error('Unsupported user-management action.');
   }
@@ -120,7 +126,7 @@ export async function api(path, { method = 'GET', body } = {}) {
 
   if (segments[0] === 'lookups' && segments[1]) {
     const lookups = {
-      patients: { table: 'Patient', select: 'id,fullName,patientCode', order: 'fullName' },
+      patients: { table: 'Patient', select: 'id,fullName,patientCode,email,userId', order: 'fullName' },
       programs: { table: 'Program', select: 'id,name,category,status', order: 'name' },
       plans: { table: 'PatientPlan', select: 'id,patientId,status,startDate,endDate', order: 'createdAt' },
       prescriptions: { table: 'Prescription', select: 'id,patientId,status,issuedAt', order: 'issuedAt' },

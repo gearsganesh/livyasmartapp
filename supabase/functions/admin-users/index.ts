@@ -9,6 +9,18 @@ const corsHeaders = {
   "Vary": "Origin",
 };
 
+function generateTemporaryPassword(): string {
+  // Generate a unique, high-entropy temporary credential for administrator-mediated onboarding.
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join("");
+}
+
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
 function reply(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
     status,
@@ -80,11 +92,12 @@ Deno.serve(async (req: Request) => {
     if (patientError || !patient) return reply(404, { error: "Patient record not found." });
     if (patient.userId) return reply(409, { error: "This patient is already linked to a login account." });
     const email = typeof input.email === "string" ? input.email.trim().toLowerCase() : String(patient.email || "").trim().toLowerCase();
-    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return reply(400, { error: "Add a valid email address to this patient record first." });
+    if (!isValidEmail(email)) return reply(400, { error: "Add a valid email address to this patient record first." });
     if (patient.email && String(patient.email).trim().toLowerCase() !== email) return reply(400, { error: "The login email must match the patient's email. Update the patient record first if needed." });
 
+    const temporaryPassword = generateTemporaryPassword();
     const { data: created, error: createError } = await adminClient.auth.admin.createUser({
-      email, password: "123456", email_confirm: true, user_metadata: { full_name: patient.fullName, patient_code: patient.patientCode },
+      email, password: temporaryPassword, email_confirm: true, user_metadata: { full_name: patient.fullName, patient_code: patient.patientCode },
     });
     if (createError || !created.user) return reply(createError?.message?.toLowerCase().includes("already") ? 409 : 400, {
       error: createError?.message?.toLowerCase().includes("already") ? "An account with this email already exists. Ask the superadmin to review and link the existing account." : "Unable to create the client authentication account.",
@@ -108,7 +121,7 @@ Deno.serve(async (req: Request) => {
       return reply(409, { error: "The patient was linked by another action. No client account was kept; refresh and try again." });
     }
     await adminClient.from("AuditLog").insert({ id: crypto.randomUUID(), actorId: caller.id, action: "CLIENT_LOGIN_CREATED", resource: "Patient", resourceId: patientId });
-    return reply(201, { item: profile, patient: { id: patient.id, patientCode: patient.patientCode, fullName: patient.fullName }, temporaryPassword: "123456", mustChangePassword: true });
+    return reply(201, { item: profile, patient: { id: patient.id, patientCode: patient.patientCode, fullName: patient.fullName }, temporaryPassword, mustChangePassword: true });
   }
 
   if (input.action === "reset_password") {
@@ -116,12 +129,13 @@ Deno.serve(async (req: Request) => {
     const id = typeof input.id === "string" ? input.id : "";
     const { data: target, error: targetError } = await adminClient.from("User").select("id,role").eq("id", id).maybeSingle();
     if (targetError || !target) return reply(404, { error: "User not found." });
-    const { error: authUpdateError } = await adminClient.auth.admin.updateUserById(id, { password: "123456" });
+    const temporaryPassword = generateTemporaryPassword();
+    const { error: authUpdateError } = await adminClient.auth.admin.updateUserById(id, { password: temporaryPassword });
     if (authUpdateError) return reply(400, { error: "Unable to reset this password." });
     const { error: profileUpdateError } = await adminClient.from("User").update({ mustChangePassword: true, updatedAt: new Date().toISOString() }).eq("id", id);
     if (profileUpdateError) return reply(500, { error: "Password was reset, but the forced-change flag could not be set. Contact support immediately." });
     await adminClient.from("AuditLog").insert({ id: crypto.randomUUID(), actorId: caller.id, action: "USER_PASSWORD_RESET", resource: "User", resourceId: id });
-    return reply(200, { success: true, temporaryPassword: "123456", mustChangePassword: true });
+    return reply(200, { success: true, temporaryPassword, mustChangePassword: true });
   }
 
   if (input.action === "update") {
@@ -130,7 +144,7 @@ Deno.serve(async (req: Request) => {
     const fullName = typeof input.fullName === "string" ? input.fullName.trim() : "";
     const email = typeof input.email === "string" ? input.email.trim().toLowerCase() : "";
     const role = typeof input.role === "string" ? input.role : "";
-    if (!id || fullName.length < 2 || fullName.length > 160 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) ||
+    if (!id || fullName.length < 2 || fullName.length > 160 || !isValidEmail(email) ||
       !["SUPERADMIN","ADMIN","CLINICIAN","NUTRITIONIST","THERAPIST","STAFF","CLIENT","LAB_PARTNER"].includes(role)) {
       return reply(400, { error: "Enter a valid name, email and role." });
     }

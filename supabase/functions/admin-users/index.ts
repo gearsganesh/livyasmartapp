@@ -92,7 +92,7 @@ Deno.serve(async (req: Request) => {
     if (patientError || !patient) return reply(404, { error: "Patient record not found." });
     if (patient.userId) return reply(409, { error: "This patient is already linked to a login account." });
     const email = typeof input.email === "string" ? input.email.trim().toLowerCase() : String(patient.email || "").trim().toLowerCase();
-    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return reply(400, { error: "Add a valid email address to this patient record first." });
+    if (!isValidEmail(email)) return reply(400, { error: "Add a valid email address to this patient record first." });
     if (patient.email && String(patient.email).trim().toLowerCase() !== email) return reply(400, { error: "The login email must match the patient's email. Update the patient record first if needed." });
 
     const temporaryPassword = generateTemporaryPassword();
@@ -144,7 +144,7 @@ Deno.serve(async (req: Request) => {
     const fullName = typeof input.fullName === "string" ? input.fullName.trim() : "";
     const email = typeof input.email === "string" ? input.email.trim().toLowerCase() : "";
     const role = typeof input.role === "string" ? input.role : "";
-    if (!id || fullName.length < 2 || fullName.length > 160 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) ||
+    if (!id || fullName.length < 2 || fullName.length > 160 || !isValidEmail(email) ||
       !["SUPERADMIN","ADMIN","CLINICIAN","NUTRITIONIST","THERAPIST","STAFF","CLIENT","LAB_PARTNER"].includes(role)) {
       return reply(400, { error: "Enter a valid name, email and role." });
     }

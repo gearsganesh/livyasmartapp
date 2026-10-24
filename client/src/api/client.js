@@ -124,6 +124,30 @@ export async function api(path, { method = 'GET', body } = {}) {
     };
   }
 
+  if (segments[0] === 'appointments' && segments.length === 1 && method === 'POST') {
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData.user) throw new Error('Sign in is required to request an appointment.');
+    const { data: profile, error: profileError } = await supabase.from('User')
+      .select('id,role,isActive').eq('id', authData.user.id).maybeSingle();
+    if (profileError || !profile || !profile.isActive) throw new Error('Your LIVYA account is not active.');
+    const insertBody = { ...(body || {}), id: crypto.randomUUID(), updatedAt: new Date().toISOString() };
+    if (profile.role === 'CLIENT') {
+      const { data: patient, error: patientError } = await supabase.from('Patient')
+        .select('id').eq('userId', authData.user.id).maybeSingle();
+      if (patientError) fail(patientError);
+      if (!patient) throw new Error('Your client account is not linked to a patient profile. Contact LIVYA staff.');
+      insertBody.patientId = patient.id;
+      insertBody.status = 'REQUESTED';
+      delete insertBody.clinicianId;
+      delete insertBody.appointmentNumber;
+    } else if (!['SUPERADMIN','ADMIN','CLINICIAN','NUTRITIONIST','THERAPIST','STAFF'].includes(profile.role)) {
+      throw new Error('Your role cannot create appointments.');
+    }
+    const { data, error } = await supabase.from('Appointment').insert(insertBody).select('*').single();
+    if (error) fail(error);
+    return { item: data };
+  }
+
   if (segments[0] === 'lookups' && segments[1]) {
     const lookups = {
       patients: { table: 'Patient', select: 'id,fullName,patientCode,email,userId', order: 'fullName' },

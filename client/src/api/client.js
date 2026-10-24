@@ -138,6 +138,7 @@ export async function api(path, { method = 'GET', body } = {}) {
       if (!patient) throw new Error('Your client account is not linked to a patient profile. Contact LIVYA staff.');
       insertBody.patientId = patient.id;
       insertBody.status = 'REQUESTED';
+      insertBody.appointmentType = insertBody.appointmentType || 'Consultation';
       delete insertBody.clinicianId;
       delete insertBody.appointmentNumber;
     } else if (!['SUPERADMIN','ADMIN','CLINICIAN','NUTRITIONIST','THERAPIST','STAFF'].includes(profile.role)) {

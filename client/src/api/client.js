@@ -96,8 +96,31 @@ export async function api(path, { method = 'GET', body } = {}) {
   }
 
   if (segments[0] === 'dashboard' && segments[1] === 'summary') {
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData.user) throw new Error('Sign in is required to load the dashboard.');
+
+    const { data: profile, error: profileError } = await supabase
+      .from('User').select('id,role,isActive').eq('id', authData.user.id).maybeSingle();
+    if (profileError || !profile || !profile.isActive) throw new Error('Your LIVYA account is not active.');
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    if (profile.role === 'CLIENT') {
+      const { data: patient, error: patientError } = await supabase
+        .from('Patient').select('id').eq('userId', authData.user.id).maybeSingle();
+      if (patientError) fail(patientError);
+      if (!patient) return { stats: { appointments: 0 }, recentAppointments: [] };
+      const { data: upcoming, error: upcomingError, count } = await supabase
+        .from('Appointment')
+        .select('id,title,startAt,status,clinician:User!Appointment_clinicianId_fkey(fullName)', { count: 'exact' })
+        .eq('patientId', patient.id).gte('startAt', today.toISOString())
+        .order('startAt').limit(5);
+      if (upcomingError) fail(upcomingError);
+      return {
+        stats: { appointments: count || 0 },
+        recentAppointments: (upcoming || []).map(a => ({ ...a, patient: null })),
+      };
+    }
     const [patients, appointments, alerts, reviews, programs, orders, upcoming] = await Promise.all([
       supabase.from('Patient').select('id', { count: 'exact', head: true }),
       supabase.from('Appointment').select('id', { count: 'exact', head: true }).gte('startAt', today.toISOString()),
